@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify # type: ignore
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, get_current_user # type: ignore
 from werkzeug.security import generate_password_hash, check_password_hash # type: ignore
-from api.models import db, Jefatura, Zona, Dependencia, Usuario, RolOperativo, Turno, TurnoAsignado, Guardia, Licencia, LicenciaSolicitada, SolicitudCambio, LicenciaMedica, PasswordResetToken, ExtraordinariaGuardia
+from api.models import db, Jefatura, Zona, Dependencia, Usuario, Turno, Guardia, Licencia, LicenciaSolicitada, PasswordResetToken, ExtraordinariaGuardia
 import secrets
 from datetime import datetime, timedelta
 from .utils.email_utils import send_email  
@@ -286,10 +286,11 @@ def crear_licencia():
     usuario_id = body.get("usuario_id")
     fecha_inicio = body.get("fecha_inicio")
     fecha_fin = body.get("fecha_fin")
+    tipo = body.get("tipo")
     motivo = body.get("motivo")
     estado = body.get("estado")
 
-    nueva = Licencia(usuario_id=usuario_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, motivo=motivo, estado=estado)
+    nueva = Licencia(usuario_id=usuario_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, tipo=tipo, motivo=motivo, estado=estado)
     db.session.add(nueva)
     db.session.commit()
     return jsonify(nueva.serialize()), 201
@@ -305,6 +306,7 @@ def actualizar_licencia(id):
     licencia.usuario_id = body.get("usuario_id")
     licencia.fecha_inicio = body.get("fecha_inicio")
     licencia.fecha_fin = body.get("fecha_fin")
+    licencia.tipo = body.get("tipo")
     licencia.motivo = body.get("motivo")
     licencia.estado = body.get("estado")
 
@@ -345,10 +347,11 @@ def crear_licencia_solicitada():
     usuario_id = body.get("usuario_id")
     fecha_inicio = body.get("fecha_inicio")
     fecha_fin = body.get("fecha_fin")
+    tipo = body.get("tipo")
     motivo = body.get("motivo")
     estado = body.get("estado")
 
-    nueva = LicenciaSolicitada(usuario_id=usuario_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, motivo=motivo, estado=estado)
+    nueva = LicenciaSolicitada(usuario_id=usuario_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, tipo=tipo, motivo=motivo, estado=estado)
     db.session.add(nueva)
     db.session.commit()
     return jsonify(nueva.serialize()), 201
@@ -402,98 +405,6 @@ def eliminar_licencia_solicitada(id):
     db.session.commit()
     return jsonify({"status": "ok"}), 200
 
-
-# -------------------------------------------------------------------
-# LICENCIAS MEDICAS
-# -------------------------------------------------------------------
-@api.route('/licencias-medicas', methods=['POST'])
-@jwt_required()
-def crear_licencia_medica():
-    body = request.json
-    usuario_id = body.get("usuario_id")
-    fecha_inicio = body.get("fecha_inicio")
-    fecha_fin = body.get("fecha_fin")
-    motivo = body.get("motivo")
-    estado = body.get("estado")
-
-    nueva = LicenciaMedica(usuario_id=usuario_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, motivo=motivo, estado=estado)
-    db.session.add(nueva)
-    db.session.commit()
-    return jsonify(nueva.serialize()), 201
-
-@api.route('/licencias-medicas/<int:id>', methods=['PUT'])
-@jwt_required()
-def actualizar_licencia_medica(id):
-    body = request.json
-    licencia = LicenciaMedica.query.get(id)
-    if not licencia:
-        return jsonify({"error": "Licencia no encontrada"}), 404
-
-    licencia.usuario_id = body.get("usuario_id")
-    licencia.fecha_inicio = body.get("fecha_inicio")
-    licencia.fecha_fin = body.get("fecha_fin")
-    licencia.motivo = body.get("motivo")
-    licencia.estado = body.get("estado")
-
-    db.session.commit()
-    return jsonify(licencia.serialize()), 200
-
-@api.route('/licencias-medicas/<int:id>', methods=['DELETE'])
-@jwt_required()
-def eliminar_licencia_medica(id):
-    licencia = LicenciaMedica.query.get(id)
-    db.session.delete(licencia)
-    db.session.commit()
-    return jsonify({'status': 'ok'}), 200
-
-@api.route('/licencias-medicas', methods=['GET'])
-def listar_licencias_medicas():
-    data = LicenciaMedica.query.all()
-    return jsonify([x.serialize() for x in data]), 200
-
-# -------------------------------------------------------------------
-# SOLICITUDES CAMBIO
-# -------------------------------------------------------------------
-@api.route('/solicitudes-cambio', methods=['POST'])
-@jwt_required()
-def crear_solicitud():
-    body = request.json
-    usuario_id = body.get("usuario_id")
-    turno_original_id = body.get("turno_original_id")
-    turno_solicitado_id = body.get("turno_solicitado_id")
-    estado = body.get("estado")
-
-    nueva = SolicitudCambio(usuario_solicitante_id=usuario_id, turno_original_id=turno_original_id, turno_solicitado_id=turno_solicitado_id, estado=estado)
-    db.session.add(nueva)
-    db.session.commit()
-    return jsonify(nueva.serialize()), 201
-
-@api.route('/solicitudes-cambio', methods=['GET'])
-def listar_solicitudes():
-    data = SolicitudCambio.query.all()
-    return jsonify([x.serialize() for x in data]), 200
-
-# -------------------------------------------------------------------
-# TURNO ASIGNADO
-# -------------------------------------------------------------------
-@api.route('/turnos-asignados', methods=['POST'])
-@jwt_required()
-def crear_turno_asignado():
-    body = request.json
-    usuario_id = body.get("usuario_id")
-    turno_id = body.get("turno_id")
-    estado = body.get("estado")
-
-    nuevo = TurnoAsignado(usuario_id=usuario_id, turno_id=turno_id, estado=estado)
-    db.session.add(nuevo)
-    db.session.commit()
-    return jsonify(nuevo.serialize()), 201
-
-@api.route('/turnos-asignados', methods=['GET'])
-def listar_turnos_asignados():
-    data = TurnoAsignado.query.all()
-    return jsonify([x.serialize() for x in data]), 200
-
 # -------------------------------------------------------------------
 # USUARIOS
 # -------------------------------------------------------------------
@@ -510,6 +421,7 @@ def crear_usuario():
     dependencia_id = body.get("dependencia_id")
     zona_id = body.get("zona_id")
     estado = body.get("estado")
+    is_admin = body.get("is_admin")
     turno_id = body.get("turno_id")
 
 
@@ -556,6 +468,7 @@ def crear_usuario():
         rol_jerarquico=rol_jerarquico,
         dependencia_id=dependencia_id,
         zona_id=zona_id,
+        is_admin=is_admin,
         estado=estado,
         turno_id=turno_id
     )

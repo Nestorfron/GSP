@@ -7,7 +7,7 @@ from flask_migrate import Migrate # type: ignore
 from extensions import mail # type: ignore
 
 from config import Config
-from api.models import db, Jefatura, Zona, Dependencia, Usuario, RolOperativo, UsuarioRolOperativo, Turno, TurnoAsignado, SolicitudCambio, Guardia, Licencia, LicenciaMedica, LicenciaSolicitada, ExtraordinariaGuardia
+from api.models import db, Jefatura, Zona, Dependencia, Usuario, Turno, Guardia, Licencia, LicenciaSolicitada, ExtraordinariaGuardia
 
 # Importa tus Blueprints
 from api.routes import api
@@ -25,19 +25,14 @@ jwt = JWTManager(app)
 migrate = Migrate(app, db)
 
 # Flask-Admin
-admin = Admin(app, name='Panel Admin', template_mode='bootstrap3')
+admin = Admin(app, name='Panel Admin')
 admin.add_view(ModelView(Jefatura, db.session))
 admin.add_view(ModelView(Zona, db.session))
 admin.add_view(ModelView(Dependencia, db.session))
 admin.add_view(ModelView(Usuario, db.session))
-admin.add_view(ModelView(RolOperativo, db.session))
-admin.add_view(ModelView(UsuarioRolOperativo, db.session))
 admin.add_view(ModelView(Turno, db.session))
-admin.add_view(ModelView(TurnoAsignado, db.session))
-admin.add_view(ModelView(SolicitudCambio, db.session))
 admin.add_view(ModelView(Guardia, db.session))
 admin.add_view(ModelView(Licencia, db.session))
-admin.add_view(ModelView(LicenciaMedica, db.session))
 admin.add_view(ModelView(LicenciaSolicitada, db.session))
 admin.add_view(ModelView(ExtraordinariaGuardia, db.session))
 
